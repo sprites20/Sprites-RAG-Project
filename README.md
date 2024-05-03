@@ -3,6 +3,7 @@ RAG using Signed Distance Similarity (WIP)
 Run somecbox2.py
 
 UI
+
 ![alt text](https://github.com/sprites20/Sprites-RAG-Project/blob/main/UI.png)
 
 Local Retriever:
