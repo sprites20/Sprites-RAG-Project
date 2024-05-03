@@ -1,5 +1,3 @@
-# rerank
-
 from llama_index.core import ServiceContext, VectorStoreIndex
 from llama_index.llms.cohere import Cohere
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, ServiceContext
@@ -16,6 +14,8 @@ import numpy as np
 
 import os
 
+import pickle
+
 # Define the URL of the webpage to scrape
 url = 'https://www.geeksforgeeks.org/program-for-nth-fibonacci-number/'
 headers = {
@@ -26,6 +26,10 @@ headers = {
 response = requests.get(url)
 soup = BeautifulSoup(response.text, 'html.parser')
 text = soup.get_text()
+
+file_path = "somefibo.py_doc.txt"  # Specify the path to your file
+with open(file_path, "r") as file:
+    text = file.read()
 
 # Tokenize the text into sentences
 sentences = sent_tokenize(text)
@@ -45,7 +49,7 @@ for i, chunk_data in enumerate(chunks):
         file.write(chunk_text)
 
 # Set up the Cohere API key
-API_KEY = #API_KEY
+API_KEY = "BXyTrgsV2PMbRuvDYu9ZwfLHObeTkR4SvPoZAvtf"
 
 # Create the embedding model
 embed_model = CohereEmbedding(
@@ -65,6 +69,7 @@ data = SimpleDirectoryReader(input_dir="chunk_texts").load_data()
 
 # Create the index
 index = VectorStoreIndex.from_documents(data, service_context=service_context)
+print(index)
 
 # Create the Cohere reranker
 cohere_rerank = CohereRerank(api_key=API_KEY)
@@ -73,6 +78,24 @@ cohere_rerank = CohereRerank(api_key=API_KEY)
 query_engine = index.as_query_engine(node_postprocessors=[cohere_rerank])
 
 # Generate the response
-response = query_engine.query("How to print nth fibonacci number.")
+response = query_engine.query("Function to print nth fibonacci number. Include the location of the program if any")
 
 print(response)
+
+#Agent creates queries for relevant information
+#Example
+
+#Retrieves relevant information
+
+
+#Agents Run
+#Agent Retrieves Code
+#Agent runs code
+#Agent Returns code in a json. Appends json to output
+#About its input and output
+
+#LLM returns output.
+
+#Integrate into the UI
+
+#
