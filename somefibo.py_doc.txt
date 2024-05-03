@@ -1,0 +1,24 @@
+To import this module do:
+import sys
+sys.path.append("somefibo.py") #Add the utils' directory to the Python path
+
+Then:
+import somefibo   #Now you can import the module as usual
+
+ Code Location: somefibo.py # The code is located in the current directory
+
+Code Name: somefibo.py
+
+Functions:
+
+Function Name: print_nth_fibonacci
+Description: This function prints the nth Fibonacci number. The Fibonacci sequence is a series of numbers in which each number is the sum of the two preceding ones, usually starting with 0 and 1.
+Input Arguments: n (integer) - The position of the desired Fibonacci number in the sequence.
+Output Arguments: None
+Example Usage: print_nth_fibonacci(7)
+
+Function Name: print_nth_fibonacci_negative
+Description: This function prints the nth Fibonacci number in the negative sequence. The negative Fibonacci sequence is similar to the regular Fibonacci sequence, but with alternating signs.
+Input Arguments: n (integer) - The position of the desired Fibonacci number in the sequence.
+Output Arguments: None
+Example Usage: print_nth_fibonacci_negative(7)
