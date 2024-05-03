@@ -24,6 +24,42 @@ import sys
 from io import StringIO
 from pathlib import Path
 
+# Set up the Cohere API key
+from llama_index.core import ServiceContext, VectorStoreIndex
+from llama_index.llms.cohere import Cohere
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, ServiceContext
+from llama_index.embeddings.cohere import CohereEmbedding
+from llama_index.postprocessor.cohere_rerank import CohereRerank
+
+import requests
+from bs4 import BeautifulSoup
+from nltk.tokenize import sent_tokenize
+import json
+from transformers import AutoTokenizer, AutoModel
+import torch
+import numpy as np
+
+import os
+import re
+
+
+#Retrieve Code Documentation
+API_KEY = "BXyTrgsV2PMbRuvDYu9ZwfLHObeTkR4SvPoZAvtf"
+
+# Create the embedding model
+embed_model = CohereEmbedding(
+    cohere_api_key=API_KEY,
+    model_name="embed-english-v3.0",
+    input_type="search_query",
+)
+
+# Create the service context with the Cohere model for generation and embedding model
+service_context = ServiceContext.from_defaults(
+    llm=Cohere(api_key=API_KEY, model="command"),
+    embed_model=embed_model
+)
+user_prompt = "Function to print nth fibonacci number."
+
 TOGETHER_API_KEY = "5391e02b5fbffcdba1e637eada04919a5a1d9c9dfa5795eafe66b6d464d761ce"
 
 client = OpenAI(
@@ -288,6 +324,29 @@ class ChatBoxApp(MDApp):
         # Print the assistant's response
         print("Bot: ", response)
         return response
+    def retrieve_code(self, user_prompt):
+        file_path = "somefibo.py_doc.txt"  # Specify the path to your file
+        with open(file_path, "r") as file:
+            text = file.read()
+
+        # Load the data from the saved chunk files
+        data = SimpleDirectoryReader(input_dir="chunk_texts").load_data()
+
+        # Create the index
+        index = VectorStoreIndex.from_documents(data, service_context=service_context)
+        print(index)
+
+        # Create the Cohere reranker
+        cohere_rerank = CohereRerank(api_key=API_KEY)
+
+        # Create the query engine
+        query_engine = index.as_query_engine(node_postprocessors=[cohere_rerank])
+
+        # Generate the response
+        response = query_engine.query(f"{user_prompt}. Include the location of the program, name, function name, and others if any")
+
+        print(response)
+        return response
     def extract_python_code(self, text):
         # Regular expression to match the Python code block
         pattern = r"```python\n(.*?)\n```"
@@ -301,20 +360,26 @@ class ChatBoxApp(MDApp):
         # Print the extracted Python code
         print(python_code)
         return python_code
-    def prepare_code(self, code_res):
-        import re
+        
+    
+    def prepare_code(self, input_text):
+
 
         # Input text containing the Python code block
-        input_text = """
-        Bot:   ```python
-        from somefibo import print_nth_fibonacci
+        
+        code = self.extract_python_code(input_text)
+        generate_code = f"Retrieved data:\n{retrieved}\nCreate a program based on user prompt. You can import modules based on the retrieved text.\nPrompt:\n{user_prompt}""
+        self.add_message("system", generate_code)
+        chat_completion = client.chat.completions.create(
+          messages=self.past_messages,
+          model="mistralai/Mixtral-8x7B-Instruct-v0.1"
+        )
+        
+        response = chat_completion.choices[0].message.content
+        response = response.replace("\\_", "_")
 
-        n = int(input("Enter the value of n: "))
-
-        print_nth_fibonacci(n)
-        ```"""
-
-        code = self.extract_python_code = input_text
+        # Print the assistant's response
+        print("Bot: ", response)
         
     def run_code(self, code):
         # Capture the standard output
@@ -332,6 +397,7 @@ class ChatBoxApp(MDApp):
         finally:
             # Restore the original standard output
             sys.stdout = sys_stdout
+        print(captured_output.get_value())
         return captured_output.get_value()
             
     def button_pressed(self):
@@ -386,6 +452,10 @@ class ChatBoxApp(MDApp):
             output = run_code(code)
             
             """
+            
+            self.retrieve_code(user_text)
+            self.prepare_code()
+            self.run_code()
             
             # Code outputs to output.txt
             
