@@ -153,7 +153,7 @@ class TouchableRectangle(Widget):
                                         
                                         # First get the id of node, store in connections, with value of the line
                                         if child.node_id not in connections[parent.node_id]["outputs"]:
-                                            connections[parent.node_id]["outputs"] = {child.node_id : {}}
+                                            connections[parent.node_id]["outputs"][child.node_id] = {}
                                         if self.curr_i not in connections[parent.node_id]["outputs"][child.node_id]:
                                             connections[parent.node_id]["outputs"][child.node_id][self.curr_i] = {}
                                         connections[parent.node_id]["outputs"][child.node_id][self.curr_i][j] = str(seconds)
@@ -161,14 +161,14 @@ class TouchableRectangle(Widget):
                                         
                                         # First get the id of node, store in connections, with value of the line
                                         if parent.node_id not in connections[child.node_id]["inputs"]:
-                                            connections[child.node_id]["inputs"] = {parent.node_id : {}}
+                                            connections[child.node_id]["inputs"][parent.node_id] = {}
                                         if j not in connections[child.node_id]["inputs"][parent.node_id]:
                                             connections[child.node_id]["inputs"][parent.node_id][j] = {}
                                         connections[child.node_id]["inputs"][parent.node_id][j][self.curr_i] = str(seconds)
                                         #print(lines)
                                         #print(parent.node_id, connections[parent.node_id])
                                         #print(child.node_id, connections[child.node_id])
-                                        
+                                        print(connections)
                                     break
                                     
             self.canvas.remove(self.line)
@@ -309,10 +309,11 @@ class DraggableLabel(DragBehavior, Label):
             self.output_labels[i].pos = (self.x + self.width - self.output_labels[i].width - 10, self.y - (20 * count))
             self.output_label_circles[i].pos = (self.x + self.width-7, self.y - (20 * count))
             count += 1
+        
+        
         if self.line2:
             self.line2.points = [self.output_circle_pos[0] + 5, self.output_circle_pos[1] + 5,
                                 self.connection[0], self.connection[1]]
-    
 
     def on_touch_down(self, touch):
         if self.collide_point(*touch.pos):
@@ -347,15 +348,23 @@ class DraggableLabel(DragBehavior, Label):
                     #print("j: ", j)
                     for k in connections[self.node_id]["outputs"][i][j]:
                         curr_line = connections[self.node_id]["outputs"][i][j][k]
-                        lines[curr_line].points = [self.output_label_circles[j].pos[0] + 5, self.output_label_circles[j].pos[1] + 5, lines[curr_line].points[2], lines[curr_line].points[3]]
-                    
+                        if j != "output_circle":
+                            lines[curr_line].points = [self.output_label_circles[j].pos[0] + 5, self.output_label_circles[j].pos[1] + 5, lines[curr_line].points[2], lines[curr_line].points[3]]
+                        else:
+                            #pass
+                            lines[curr_line].points = [self.output_circle_pos[0] + 5, self.output_circle_pos[1] + 5, lines[curr_line].points[2], lines[curr_line].points[3]]
             for i in connections[self.node_id]["inputs"]:
                 #print("i: ", i)
                 for j in connections[self.node_id]["inputs"][i]:
                     #print("j: ", j)
                     for k in connections[self.node_id]["inputs"][i][j]:
                         curr_line = connections[self.node_id]["inputs"][i][j][k]
-                        lines[curr_line].points = [lines[curr_line].points[0], lines[curr_line].points[1], self.input_label_circles[j].pos[0] + 5, self.input_label_circles[j].pos[1] + 5]
+                        #print(j)
+                        if j != "input_circle":
+                            lines[curr_line].points = [lines[curr_line].points[0], lines[curr_line].points[1], self.input_label_circles[j].pos[0] + 5, self.input_label_circles[j].pos[1] + 5]
+                        else:
+                            #pass
+                            lines[curr_line].points = [lines[curr_line].points[0], lines[curr_line].points[1], self.input_circle_pos[0] + 5, self.input_circle_pos[1] + 5]
         """
         if self.prev_pos:
             # Calculate the delta between the current and previous positions
@@ -386,17 +395,51 @@ class DraggableLabel(DragBehavior, Label):
                         # Create a line connecting the output circle of the current instance to the input circle of the other instance
                         with self.canvas:
                             Color(1, 0, 0)
+                            """
                             self.line2 = Line(points=[self.output_circle_pos[0] + 5, self.output_circle_pos[1] + 5,
                                                       child.input_circle_pos[0] + 5, child.input_circle_pos[1] + 5])
                             self.connection = (child.input_circle_pos[0] + 5, child.input_circle_pos[1] + 5)
+                            """
                             #If collided save the id of the connection bidirectionally, the id of this and the other.
                             #First get the id of the child, store in connections
+                            #Instantiate line on lines by appending
+                            seconds = time.time()
+                            lines[str(seconds)] = (Line(points=[self.output_circle_pos[0] + 5, self.output_circle_pos[1] + 5,
+                                                      child.input_circle_pos[0] + 5, child.input_circle_pos[1] + 5]))
+                            #self.connection = (child.input_circle_pos[0] + 5, child.input_circle_pos[1] + 5)
+                            #If collided save the id of the connection bidirectionally, the id of this and the other.
+                            # Initialize connections if it is not already initialized
+                            if self.node_id not in connections:
+                                connections[self.node_id] = {
+                                    "inputs" : {},
+                                    "outputs" : {}
+                                }
+                            if child.node_id not in connections:
+                                connections[child.node_id] = {
+                                    "inputs" : {},
+                                    "outputs" : {}
+                                }
                             
+                            # First get the id of node, store in connections, with value of the line
+                            if child.node_id not in connections[self.node_id]["outputs"]:
+                                connections[self.node_id]["outputs"][child.node_id] = {}
+                            if "output_circle" not in connections[self.node_id]["outputs"][child.node_id]:
+                                connections[self.node_id]["outputs"][child.node_id]["output_circle"] = {}
+                            connections[self.node_id]["outputs"][child.node_id]["output_circle"]["input_circle"] = str(seconds)
+                            # Then get the id of the child, store in connections
                             
-                            print(self.connection)
+                            # First get the id of node, store in connections, with value of the line
+                            if self.node_id not in connections[child.node_id]["inputs"]:
+                                connections[child.node_id]["inputs"][self.node_id] = {}
+                            if "input_circle" not in connections[child.node_id]["inputs"][self.node_id]:
+                                connections[child.node_id]["inputs"][self.node_id]["input_circle"] = {}
+                            connections[child.node_id]["inputs"][self.node_id]["input_circle"]["output_circle"] = str(seconds)
+                            
+                            print(connections)
+                            
+                            #print(self.connection)
                             print(child.text)
                         
-                    
                         print(child.node_id)
                         #The circle collided in that id, store in connections[id]
                         print("output_circle")
